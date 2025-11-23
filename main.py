@@ -1,10 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 class DuplicateVisitorError(Exception):
+    """Raised when the same visitor tries to check in consecutively."""
     pass
 
 class EarlyEntryError(Exception):
+    """Raised when a visitor attempts to re-enter within 5 minutes."""
     pass
 
 FILENAME = "visitors.txt"
@@ -30,20 +32,23 @@ def get_last_visitor():
         return name, datetime.fromisoformat(timestamp)
 
 def add_visitor(visitor_name):
-    """Add a visitor unless duplicate of previous visitor."""
+    """Add a visitor with duplicate and 5-minute early re-entry checks."""
     last_visitor, last_time = get_last_visitor()
 
     # Rule 1: No duplicate consecutive visitors
     if visitor_name == last_visitor:
         raise DuplicateVisitorError("Duplicate consecutive visitor not allowed.")
 
-    # (5-minute rule will be added later in the branch)
+    # Rule 2: No re-entry within 5 minutes
+    if last_visitor == visitor_name:
+        time_diff = datetime.now() - last_time
+        if time_diff < timedelta(minutes=5):
+            raise EarlyEntryError("Visitor must wait 5 minutes before re-entry.")
 
-    # Log visitor
+    # Log the visitor
     now = datetime.now().isoformat()
     with open(FILENAME, "a") as f:
         f.write(f"{visitor_name} | {now}\n")
-
 
 def main():
     ensure_file()
