@@ -6,7 +6,7 @@ class DuplicateVisitorError(Exception):
     pass
 
 class EarlyEntryError(Exception):
-    """Raised when a visitor attempts to re-enter within 5 minutes."""
+    """Raised when any visitor tries to check in within 5 minutes of the last visitor."""
     pass
 
 FILENAME = "visitors.txt"
@@ -32,18 +32,16 @@ def get_last_visitor():
         return name, datetime.fromisoformat(timestamp)
 
 def add_visitor(visitor_name):
-    """Add a visitor with duplicate and 5-minute early re-entry checks."""
+    """Add a visitor with duplicate and 5-minute early entry checks."""
     last_visitor, last_time = get_last_visitor()
 
     # Rule 1: No duplicate consecutive visitors
     if visitor_name == last_visitor:
         raise DuplicateVisitorError("Duplicate consecutive visitor not allowed.")
 
-    # Rule 2: No re-entry within 5 minutes
-    if last_visitor == visitor_name:
-        time_diff = datetime.now() - last_time
-        if time_diff < timedelta(minutes=5):
-            raise EarlyEntryError("Visitor must wait 5 minutes before re-entry.")
+    # Rule 2: No visitor (anyone) within 5 minutes
+    if last_time and (datetime.now() - last_time) < timedelta(minutes=5):
+        raise EarlyEntryError("Must wait 5 minutes before next visitor.")
 
     # Log the visitor
     now = datetime.now().isoformat()
